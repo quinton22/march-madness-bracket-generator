@@ -4,3 +4,5 @@
 !requirements.txt
 sim_*.txt
 sims/
+__pycache__/
+*.pyc
