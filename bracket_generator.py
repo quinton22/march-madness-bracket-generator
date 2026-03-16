@@ -20,6 +20,7 @@ import random
 import re
 import inquirer
 import math
+from stats_simulator import StatsGameSimulator
 
 
 def read_teams(file_path):
@@ -91,7 +92,7 @@ def get_args():
 #     return answers['bracket_type'], int(answers['iterations'])
 
 
-generator_types = ['coinflip', 'confidence']
+generator_types = ['coinflip', 'confidence', 'stats']
 
 
 class Team:
@@ -466,6 +467,8 @@ def main():
         game_simulator = CoinflipGameSimulator(options=options)
     elif generator_type == 'confidence':
         game_simulator = ConfidenceGameSimulator()
+    elif generator_type == 'stats':
+        game_simulator = StatsGameSimulator(options=options)
     else:
         raise ValueError(f"Invalid generator type: {generator_type}")
 
@@ -473,6 +476,11 @@ def main():
     print("Options: ", options)
     print("")
     brackets = [Bracket(teams) for _ in range(num_iterations)]
+
+    # Pre-load team stats upfront when using the stats simulator so that all
+    # API traffic happens before bracket simulation begins.
+    if generator_type == 'stats':
+        game_simulator.preload_stats(teams)
 
     os.makedirs('sims', exist_ok=True)
 
