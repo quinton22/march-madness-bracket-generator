@@ -15,6 +15,7 @@ Usage:
 import argparse
 import csv
 from os import write
+import os
 import random
 import re
 import inquirer
@@ -170,7 +171,7 @@ class ChoiceGameSimulator(GameSimulator):
 class ConfidenceGameSimulator(GameSimulator):
     __slots__ = 'confidences_cache'
 
-    name = 'coinflip'
+    name = 'confidence'
 
     def __init__(self):
         super().__init__()
@@ -473,10 +474,12 @@ def main():
     print("")
     brackets = [Bracket(teams) for _ in range(num_iterations)]
 
+    os.makedirs('sims', exist_ok=True)
+
     for i, bracket in enumerate(brackets):
         bracket.simulate(game_simulator)
 
-        with open(f'sim_{i+1}.txt', 'w', encoding='utf8') as f:
+        with open(f'sims/{i+1}.txt', 'w', encoding='utf8') as f:
             f.write(str(bracket))
 
         print(bracket)
