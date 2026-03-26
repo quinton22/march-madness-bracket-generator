@@ -31,11 +31,12 @@ Fallback behaviour
 * All API errors are caught; the simulator never crashes due to network issues.
 """
 
+from team import Team
+from simulators.game_simulator import GameSimulator
+from espn_api_client import get_team_data, fetch_all_teams
 import math
 import random
 from typing import Optional
-
-from api_client import fetch_all_teams, get_team_data
 
 
 # ---------------------------------------------------------------------------
@@ -95,7 +96,7 @@ def calculate_win_probability(stats1: dict, stats2: dict) -> float:
 # Simulator class
 # ---------------------------------------------------------------------------
 
-class StatsGameSimulator:
+class StatsGameSimulator(GameSimulator):
     """
     Simulate tournament games using ESPN API team statistics.
 
@@ -106,7 +107,7 @@ class StatsGameSimulator:
     Usage::
 
         simulator = StatsGameSimulator()
-        simulator.preload_stats(teams)   # optional but recommended
+        simulator.preload(teams)   # optional but recommended
         winner = simulator.simulate(team_a, team_b)
     """
 
@@ -126,7 +127,8 @@ class StatsGameSimulator:
         if self._all_teams is None:
             try:
                 print("Fetching team list from ESPN API…")
-                self._all_teams = fetch_all_teams()
+                self._all_teams = fetch_all_teams(
+                    year=self.options.get("year"), force_refresh=self.options.get("force_refresh", False))
                 print(f"  Loaded {len(self._all_teams)} teams from ESPN.")
             except Exception as exc:
                 print(f"  Warning: Could not fetch ESPN team list ({exc}). "
@@ -141,7 +143,8 @@ class StatsGameSimulator:
         """Fetch stats for a team identified by *name* (with caching)."""
         if name not in self._stats_cache:
             self._ensure_teams_loaded()
-            data = get_team_data(name, self._all_teams)
+            data = get_team_data(name, year=self.options.get(
+                "year"), force_refresh=self.options.get("force_refresh", False))
             if data is None:
                 print(f"  Warning: '{name}' not found in ESPN database. "
                       "Using seed-based fallback.")
@@ -164,7 +167,7 @@ class StatsGameSimulator:
     # Public API
     # ------------------------------------------------------------------
 
-    def preload_stats(self, teams) -> None:
+    def preload(self, teams) -> None:
         """
         Pre-fetch and cache statistics for every team in *teams*.
 
@@ -183,17 +186,17 @@ class StatsGameSimulator:
             print(f"  [{i}/{total}] {name}")
         print("Done loading stats.\n")
 
-    def simulate(self, team1, team2):
+    def simulate(self, *teams: Team) -> Team:
         """
-        Simulate a single game between *team1* and *team2*.
+        Simulate a single game between teams.
 
         Args:
-            team1: :class:`bracket_generator.Team` — first team.
-            team2: :class:`bracket_generator.Team` — second team.
+            teams: :class:`bracket_generator.Team` — teams.
 
         Returns:
             The winning :class:`bracket_generator.Team`.
         """
+        team1, team2 = teams
         stats1 = self._fetch_stats(team1)
         stats2 = self._fetch_stats(team2)
 

@@ -6,3 +6,4 @@ sim_*.txt
 sims/
 __pycache__/
 *.pyc
+espn_cache/
